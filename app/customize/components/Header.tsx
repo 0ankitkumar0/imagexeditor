@@ -9,7 +9,7 @@ export function Header() {
             V
           </div>
           <span className="font-semibold text-base md:text-lg tracking-tight hidden sm:block">
-            VirtuWear
+            TryVirtual
           </span>
         </div>
         <div className="h-6 w-px bg-zinc-200 hidden sm:block"></div>
