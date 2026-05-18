@@ -23,7 +23,7 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
   const [fontFamily, setFontFamily] = useState("Inter");
   const [shirtColor, setShirtColor] = useState("#ffffff");
   const shirtColorRef = useRef("#ffffff");
-  
+
   useEffect(() => {
     shirtColorRef.current = shirtColor;
   }, [shirtColor]);
@@ -58,7 +58,7 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
   }, []);
 
   // ── Helper: Update Three.js Texture ───────────────────────────────
-  
+
   const updateThreeTexture = useCallback(async () => {
     const textures: Record<string, string> = {};
     const allViews: { key: string; ref: ShirtView }[] = [
@@ -71,7 +71,7 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
       const c = canvasesRef.current[view.ref];
       if (c) {
         c.discardActiveObject();
-        c.renderAll(); 
+        c.renderAll();
         try {
           textures[view.key] = await compositeViewTexture(
             view.ref,
@@ -102,7 +102,7 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
 
     // Load new image from transparent source
     const newImg = await FabricImage.fromURL(transparentUrl);
-    
+
     // Rule: Preserve position, scale, rotation, layer order, and flips
     newImg.set({
       left: selectedObject.left,
@@ -121,12 +121,12 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
 
     // Find the original index to preserve layer order
     const index = canvas.getObjects().indexOf(selectedObject);
-    
+
     canvas.remove(selectedObject);
     canvas.insertAt(index, newImg); // Preserve layer order
     canvas.setActiveObject(newImg);
     canvas.requestRenderAll();
-    
+
     // Automatically refresh 3D view
     updateThreeTexture();
   };
@@ -138,16 +138,16 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
       alert("Please select an image first.");
       return;
     }
-    
+
     if (bgRemovalStatus) return;
 
     setBgRemovalStatus("Preparing AI background remover...");
     try {
       const fabricImg = selectedObject as FabricImage;
-      
+
       // 1. Get high-quality source blob
       // We use a high multiplier to ensure we don't lose quality during the transfer
-      const dataUrl = fabricImg.toDataURL({ 
+      const dataUrl = fabricImg.toDataURL({
         format: 'png',
         multiplier: 2 // Boost resolution for processing
       });
@@ -155,7 +155,7 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
       const inputBlob = await response.blob();
 
       setBgRemovalStatus("Removing background...");
-      
+
       // 2. Use @imgly/background-removal with high-quality settings
       const transparentBlob = await imglyRemoveBackground(inputBlob, {
         output: {
@@ -173,7 +173,7 @@ export function useCustomizeEditor(productType: ProductType = "tshirt") {
 
       // 3. Replace the image on canvas while preserving properties
       await replaceSelectedFabricImage(transparentUrl);
-      
+
     } catch (err: any) {
       console.error("AI BG Removal Error:", err);
       alert("Failed to remove background locally. Please check your connection and try again.");

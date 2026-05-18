@@ -34,7 +34,7 @@ const CONFIG = {
   uvMap: "/models/T-Shirt UV MAP.png",
   uvMapSize: 4267,
   regions: {
-    front: { x: 50, y: 1500, width: 2063, height: 2655 },
+  front: { x: 50, y: 1500, width: 2063, height: 2655 },
     back: { x: 2227, y: 1100, width: 1957, height: 3055 },
     leftSleeve: { x: 2555, y: 150, width: 1367, height: 1001 },
     rightSleeve: { x: 370, y: 213, width: 1367, height: 1001 },
