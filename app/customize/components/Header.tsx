@@ -10,7 +10,7 @@ export function Header() {
       <div className="flex items-center gap-2 min-w-0">
         <div className="flex items-center gap-1.5 shrink-0">
           <div className="w-6 h-6 bg-primary text-white rounded-md flex items-center justify-center font-bold text-sm">
-            V
+            T
           </div>
           <span className="font-semibold text-sm tracking-tight hidden min-[360px]:block text-text-primary">
             TryVirtual

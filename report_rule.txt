@@ -1,0 +1,152 @@
+Page 19 of 27 
+  
+ 
+University Logo.   
+ 
+College Logo.  APPENDIX - III 
+ 
+Dissertation/Project report Submission: Format Guidelines  
+ 
+Arrangement of Certificates and Text in Thesis  
+1. Student’s Declaration & copy right  
+2. Acknowledgments  
+3. Abstract  
+4. Contents  
+5. List of Figures  
+6. List of Tables  
+7. Abbreviations (if any)  
+8. Chapters  
+(Project Report bound copy in Maroon  color)  
+ 
+PREDICTION OF HOUSE PRICE USING 
+MACHINE LEARNING (Topic name)  
+(20 Times new roman)  
+ 
+ 
+A Project Report  
+(16 times new roman)  
+ 
+Submitted in Partial Fulfillment of the Requirements for the  
+Award of the Degree of  
+ 
+Bachelor of Technology  (20 TNR)  
+In 
+Computer Science & Engineering (14 TNR)  
+ 
+ 
+Submitted by  
+Student Name  (14 TNR)  
+Registration No. 12345 (12  TNR ) 
+ 
+ 
+Under the supervision of  
+ 
+                                                NAME OF THE SUPERVISOR  (12 TNR ) 
+                Assistant Professor (10  TNR ) 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Department of Computer Science & Engineering  (12 TNR ) 
+Institute Name (14  TNR ) 
+Bihar Engineering University, Patna  (16 TNR ) 
+JUNE YYYY   
+Page 20 of 27 
+ DECLARATION AND COPYRIGHT TRASFER  
+(to be signed by the candidate)  
+ 
+ 
+I ………………………………………. Roll No. …… …. … Registration No. …………. a 
+registered candidate for Undergraduate Programme (B.Tech/B.Arch) under department of 
+…… …………………………………..<Name of Departm ent>of …………………………… 
+………………………  <Name of Institute>, declare that this is my own original work and 
+does not contain material for which the copyright belongs to a third party and that it has not 
+been presented and will not be presented to any other University/ Institute for a similar or any 
+other Degree award.  
+ 
+ 
+I further  confirm that for all third -party copyright material in my thesis/ dissertation 
+(including any electronic attachments) is “blanked out” third party material from the copies 
+of the thesis/dissertation/book/articles etc; fully referenced the deleted materials and where 
+possible, provided links ( URL ) to electronic sources of the material.  
+ 
+ 
+I hereby transfer exclusive copyright for this thesis to <Name of Institute>. The following 
+rights are reserved by the author:  
+ 
+a) The right to use, free of charge, all or part of this article in future work of their own, 
+such as books and lectures, giving reference to the original place of publication and 
+copyright holding.  
+b) The right to reproduce the article or thesis for their own purpose provided the copies 
+are not offered for sale.  
+ 
+ 
+ 
+Signature of the candidate: …………………………………….  
+Date: ………………………….  
+ 
+ 
+ 
+COPYRIGHT NOTICE  
+ 
+ 
+COPYRIGHT © [YYYY] by <Name of Institute>. All rights reserved.  
+ 
+No part of this publication may be reproduced, distributed, or transmitted in any form or by 
+any means, including photocopying, recording, or other electronic or mechanical methods, 
+without the prior written permission, except in the case of brief quotations embodied in 
+critical scholarly reviews and certain other non -commercial uses with an 
+acknowledgment/reference permitted by the copyright law.  
+ 
+ 
+ 
+ 
+ 
+Page 21 of 27 
+ Project Report Presentation Information  
+ 
+1. Contents of the Dissertation  
+Title, Certification, Declaration and copyright, Acknowledgment, Abstract, Table of 
+Content, List of Figures, List of Tables, Abbreviations.  
+CHAPTER 1  Introduction  
+CHAPTER 2  Background & Literature Review  
+CHAPTER 3  Problem Definition  
+CHAPTER 4  Proposed Solution  
+CHAPTER 5  Discussion of Results  
+CHAPTER 6  Conclusion and Future Work  
+REFERENCE  Use strictly the following reference writing method. 
+(Standard Format Like IEEE)  
+ 
+APPENDICES  Summary data, intermediate results and other important 
+information may be put under Appendices.  
+ 
+Font and Spacing  
+Title:  Bold, Arial, 14 size and Centered  
+Subtitles:  Bold, Arial, 12 size and left justified  
+Spacing:  Spacing between text lines: 1.5, Arial, 12 sizes,  
+Leave one space between paragraphs, subtitle and the text or between 
+Title and sub title.  
+ 
+2. Paper Margins  
+Left margin   : 4.0 cm  
+Right margin  : 2.5 cm  
+Top margin   : 4.0 cm  
+Bottom margin  : 2.5 cm  
+ 
+3. Printing  
+The entire thesis shall be printed on both side of the paper.  
+4. Thesis submission  
+- Hard bound copy of dissertation (for Supervisor(s), concerned 
+department office, Student(s)) after incorporating modifications/ suggestions 
+of the examiner.  
+ 
+ 
+ 
+ 
+ 
+ 

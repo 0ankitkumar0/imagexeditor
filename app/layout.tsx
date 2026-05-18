@@ -21,7 +21,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "VirtuWear - Custom T-Shirt Designer",
+  title: "TryVirtual - Custom T-Shirt Designer",
   description: "Design your dream t-shirt with our 3D editor",
 };
 
