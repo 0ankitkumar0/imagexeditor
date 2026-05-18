@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Canvas, Object as FabricObject, IText, FabricImage } from "fabric";
 import { loadGoogleFont } from "../data/googleFonts";
 import { compositeViewTexture } from "@/lib/composite";
-import { ShirtView } from "../config";
+import { ShirtView, ProductType } from "../config";
 
 import { removeBackground as imglyRemoveBackground } from "@imgly/background-removal";
 
-export function useCustomizeEditor() {
+export function useCustomizeEditor(productType: ProductType = "tshirt") {
   const [activeTool, setActiveTool] = useState("select");
   const [viewMode, setViewMode] = useState<"2D" | "3D">("2D");
   const [shirtView, setShirtView] = useState("front");
@@ -77,7 +77,8 @@ export function useCustomizeEditor() {
             view.ref,
             c,
             shirtColorRef.current, // Use ref to avoid dependency cycle
-            false // 3D texture should be transparent
+            false, // 3D texture should be transparent
+            productType
           );
         } catch (err) {
           console.error(`[Texture] Failed to composite ${view.ref}:`, err);
@@ -85,7 +86,7 @@ export function useCustomizeEditor() {
       }
     }
     setDesignTextures(textures);
-  }, []); // No dependencies - stable callback
+  }, [productType]); // productType is a dependency now
 
   const debouncedUpdateTexture = useCallback(() => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -218,18 +219,6 @@ export function useCustomizeEditor() {
       fabricCanvas.on("object:modified", refresh3D);
       fabricCanvas.on("text:changed", refresh3D);
 
-      // ── NEW: Implement Printable Area Clipping ─────────────────────
-      // This ensures elements don't show up outside the designated box.
-      // ───────────────────────────────────────────────────────────────
-      const { Rect } = require("fabric");
-      const clipRect = new Rect({
-        left: 0,
-        top: 0,
-        width: fabricCanvas.getWidth(),
-        height: fabricCanvas.getHeight(),
-        absolutePositioned: true
-      });
-      fabricCanvas.clipPath = clipRect;
       fabricCanvas.requestRenderAll();
     };
   }, [debouncedUpdateTexture]);

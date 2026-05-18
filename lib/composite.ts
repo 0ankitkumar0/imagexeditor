@@ -1,6 +1,6 @@
 import { Canvas as FabricCanvas } from 'fabric';
 import { WORKSPACE_SIZE, getPrintableAreaPixels, PSD_LAYERS } from '../app/customize/config';
-import type { ShirtView } from '../app/customize/config';
+import type { ShirtView, ProductType } from '../app/customize/config';
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -20,7 +20,8 @@ export async function compositeViewTexture(
   view: ShirtView,
   fabricCanvas: FabricCanvas,
   shirtColor: string,
-  includeBackground: boolean = true
+  includeBackground: boolean = true,
+  productType: ProductType = 'tshirt'
 ): Promise<string> {
   const offscreen = document.createElement('canvas');
   offscreen.width = WORKSPACE_SIZE;
@@ -39,7 +40,7 @@ export async function compositeViewTexture(
   // Rule: All editable user graphics render strictly inside this layer.
   const fabricDataUrl = fabricCanvas.toDataURL({ multiplier: 1, format: 'png' });
   const fabricImg = await loadImage(fabricDataUrl);
-  const { dx, dy, dw, dh } = getPrintableAreaPixels(view);
+  const { dx, dy, dw, dh } = getPrintableAreaPixels(productType, view);
   ctx.drawImage(fabricImg, dx, dy, dw, dh);
 
   // ── LAYER: [product image] (Top) ─────────────────────────────

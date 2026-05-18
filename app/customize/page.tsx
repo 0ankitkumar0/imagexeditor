@@ -21,10 +21,10 @@ export default function CustomizePage() {
 
 function CustomizePageContent() {
   const searchParams = useSearchParams();
-  const editor = useCustomizeEditor();
-  const [mobilePanel, setMobilePanel] = useState<string | null>(null);
   const queryType = searchParams.get("type");
   const productType: ProductType = queryType === "hoodie" ? "hoodie" : "tshirt";
+  const editor = useCustomizeEditor(productType);
+  const [mobilePanel, setMobilePanel] = useState<string | null>(null);
 
   const closeMobilePanel = () => setMobilePanel(null);
 

@@ -51,35 +51,63 @@ export const SHIRT_MASKS = {
   'right-sleeve': '/images/shirt-right-sleeve.png',
 } as const;
 
-export const TSHIRT_PRINTABLE_PIXELS: Record<ShirtView, PrintableAreaPixels> = {
-  front: {
-    dx: Math.round(0.285 * WORKSPACE_SIZE),   // left %
-    dy: Math.round(0.2999 * WORKSPACE_SIZE),  // top %
-    dw: Math.round(0.44 * WORKSPACE_SIZE),    // width %
-    dh: Math.round(0.4498 * WORKSPACE_SIZE),  // height %
+export const PRODUCT_PRINTABLE_PIXELS: Record<ProductType, Record<ShirtView, PrintableAreaPixels>> = {
+  tshirt: {
+    front: {
+      dx: Math.round(0.285 * WORKSPACE_SIZE),   // left %
+      dy: Math.round(0.2999 * WORKSPACE_SIZE),  // top %
+      dw: Math.round(0.44 * WORKSPACE_SIZE),    // width %
+      dh: Math.round(0.4498 * WORKSPACE_SIZE),  // height %
+    },
+    back: {
+      dx: Math.round(0.286 * WORKSPACE_SIZE),
+      dy: Math.round(0.2249 * WORKSPACE_SIZE),
+      dw: Math.round(0.42 * WORKSPACE_SIZE),
+      dh: Math.round(0.5247 * WORKSPACE_SIZE),
+    },
+    'left-sleeve': {
+      dx: Math.round(0.40 * WORKSPACE_SIZE),
+      dy: Math.round(0.4273 * WORKSPACE_SIZE),
+      dw: Math.round(0.28 * WORKSPACE_SIZE),
+      dh: Math.round(0.2699 * WORKSPACE_SIZE),
+    },
+    'right-sleeve': {
+      dx: Math.round(0.366 * WORKSPACE_SIZE),
+      dy: Math.round(0.4273 * WORKSPACE_SIZE),
+      dw: Math.round(0.276 * WORKSPACE_SIZE),
+      dh: Math.round(0.2699 * WORKSPACE_SIZE),
+    },
   },
-  back: {
-    dx: Math.round(0.286 * WORKSPACE_SIZE),
-    dy: Math.round(0.2249 * WORKSPACE_SIZE),
-    dw: Math.round(0.42 * WORKSPACE_SIZE),
-    dh: Math.round(0.5247 * WORKSPACE_SIZE),
-  },
-  'left-sleeve': {
-    dx: Math.round(0.40 * WORKSPACE_SIZE),
-    dy: Math.round(0.4273 * WORKSPACE_SIZE),
-    dw: Math.round(0.28 * WORKSPACE_SIZE),
-    dh: Math.round(0.2699 * WORKSPACE_SIZE),
-  },
-  'right-sleeve': {
-    dx: Math.round(0.366 * WORKSPACE_SIZE),
-    dy: Math.round(0.4273 * WORKSPACE_SIZE),
-    dw: Math.round(0.276 * WORKSPACE_SIZE),
-    dh: Math.round(0.2699 * WORKSPACE_SIZE),
+  hoodie: {
+    front: {
+      dx: Math.round(0.285 * WORKSPACE_SIZE),
+      dy: Math.round(0.285 * WORKSPACE_SIZE),
+      dw: Math.round(0.44 * WORKSPACE_SIZE),
+      dh: Math.round(0.32 * WORKSPACE_SIZE),
+    },
+    back: {
+      dx: Math.round(0.29 * WORKSPACE_SIZE),
+      dy: Math.round(0.29 * WORKSPACE_SIZE),
+      dw: Math.round(0.415 * WORKSPACE_SIZE),
+      dh: Math.round(0.47 * WORKSPACE_SIZE),
+    },
+    'left-sleeve': {
+      dx: Math.round(0.41 * WORKSPACE_SIZE),
+      dy: Math.round(0.38 * WORKSPACE_SIZE),
+      dw: Math.round(0.20 * WORKSPACE_SIZE),
+      dh: Math.round(0.32 * WORKSPACE_SIZE),
+    },
+    'right-sleeve': {
+      dx: Math.round(0.42 * WORKSPACE_SIZE),
+      dy: Math.round(0.38 * WORKSPACE_SIZE),
+      dw: Math.round(0.15 * WORKSPACE_SIZE),
+      dh: Math.round(0.29 * WORKSPACE_SIZE),
+    },
   },
 };
 
-export function getPrintableAreaPixels(view: ShirtView): PrintableAreaPixels {
-  return TSHIRT_PRINTABLE_PIXELS[view];
+export function getPrintableAreaPixels(productType: ProductType, view: ShirtView): PrintableAreaPixels {
+  return PRODUCT_PRINTABLE_PIXELS[productType][view];
 }
 
 const PRODUCT_VIEW_IMAGE_KEYS: Record<ProductType, Record<ShirtView, string>> = {
@@ -154,8 +182,8 @@ const HOODIE_FRONT_AREA = {
   height: '32%',
   top: '28.5%',
   left: '28.5%',
-  canvasWidth: 230,
-  canvasHeight: 320,
+  canvasWidth: 220,
+  canvasHeight: 213,
 };
 
 const HOODIE_BACK_AREA = {
@@ -163,8 +191,8 @@ const HOODIE_BACK_AREA = {
   height: '47%',
   top: '29%',
   left: '29%',
-  canvasWidth: 220,
-  canvasHeight: 360,
+  canvasWidth: 208,
+  canvasHeight: 313,
 };
 
 const HOODIE_LEFT_SLEEVE_AREA = {
@@ -172,8 +200,8 @@ const HOODIE_LEFT_SLEEVE_AREA = {
   height: '32%',
   top: '38%',
   left: '41%',
-  canvasWidth: 150,
-  canvasHeight: 195,
+  canvasWidth: 100,
+  canvasHeight: 213,
 };
 
 const HOODIE_RIGHT_SLEEVE_AREA = {
@@ -181,8 +209,8 @@ const HOODIE_RIGHT_SLEEVE_AREA = {
   height: '29%',
   top: '38%',
   left: '42%',
-  canvasWidth: 148,
-  canvasHeight: 195,
+  canvasWidth: 75,
+  canvasHeight: 193,
 };
 
 export const PRINTABLE_AREAS_BY_PRODUCT: Record<
