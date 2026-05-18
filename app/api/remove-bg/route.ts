@@ -33,7 +33,7 @@ async function callInferenceModel(modelUrl: string, binaryData: Buffer, token: s
           "Content-Type": "image/png",
           "X-Wait-For-Model": "true",
         },
-        body: binaryData,
+        body: new Uint8Array(binaryData),
         signal: AbortSignal.timeout(30000), // 30s per individual attempt
       });
 
