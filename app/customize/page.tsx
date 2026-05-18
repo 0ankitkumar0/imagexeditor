@@ -165,6 +165,8 @@ function CustomizePageContent() {
                   duplicateSelected={editor.duplicateSelected}
                   bringForward={editor.bringForward}
                   sendBackward={editor.sendBackward}
+                  removeBackground={editor.removeBackground}
+                  bgRemovalStatus={editor.bgRemovalStatus}
                   mobile
                 />
               )}
