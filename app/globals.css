@@ -1,28 +1,74 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --surface: #F1F5F9;
+  --card: #FFFFFF;
+  --primary: #2563EB;
+  --secondary: #06B6D4;
+  --accent: #7C3AED;
+  --hover: #DBEAFE;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --border: #E2E8F0;
+  --success: #10B981;
+  --error: #F43F5E;
+  --muted: #F1F5F9;
 }
 
-@theme inline {
+.dark {
+  --background: #0B0F19;
+  --foreground: #F9FAFB;
+  --surface: #111827;
+  --card: #1F2937;
+  --primary: #3B82F6;
+  --secondary: #06B6D4;
+  --accent: #8B5CF6;
+  --hover: #1E3A5F;
+  --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --border: #374151;
+  --success: #10B981;
+  --error: #F43F5E;
+  --muted: #1F2937;
+}
+
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-hover: var(--hover);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-muted: var(--muted);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Custom xs breakpoint for very small phones */
+  --breakpoint-xs: 400px;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Theme transition for interactive elements */
+button, input, select, textarea, a {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 /* Mobile touch optimizations */
@@ -30,7 +76,11 @@ body {
   * {
     -webkit-tap-highlight-color: transparent;
   }
-  input, textarea, select {
+
+  /* Prevent font-size zoom on input focus on iOS */
+  input,
+  textarea,
+  select {
     font-size: 16px;
   }
 }
@@ -39,8 +89,9 @@ body {
 @keyframes slide-up {
   from {
     transform: translateY(100%);
-    opacity: 0.8;
+    opacity: 0.9;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -48,7 +99,7 @@ body {
 }
 
 .animate-slide-up {
-  animation: slide-up 0.25s ease-out forwards;
+  animation: slide-up 0.22s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 /* Hide scrollbar but keep scrolling */
@@ -56,11 +107,18 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
-/* Safe area for notched phones */
+/* Safe area inset for notched / home-bar phones */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent pull-to-refresh / overscroll bounce on iOS */
+html,
+body {
+  overscroll-behavior: none;
 }

@@ -3,6 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Canvas, Object as FabricObject, IText, FabricImage } from "fabric";
 import { loadGoogleFont } from "../data/googleFonts";
+import { compositeViewTexture } from "@/lib/composite";
+import { ShirtView } from "../config";
+
+import { removeBackground as imglyRemoveBackground } from "@imgly/background-removal";
 
 export function useCustomizeEditor() {
   const [activeTool, setActiveTool] = useState("select");
@@ -18,19 +22,46 @@ export function useCustomizeEditor() {
   const [canvasText, setCanvasText] = useState("");
   const [fontFamily, setFontFamily] = useState("Inter");
   const [shirtColor, setShirtColor] = useState("#ffffff");
+  const shirtColorRef = useRef("#ffffff");
+  
+  useEffect(() => {
+    shirtColorRef.current = shirtColor;
+  }, [shirtColor]);
+
   const [opacity, setOpacity] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [size, setSize] = useState(50);
+  const [zoom, setZoom] = useState(1);
+
+  // Loading States
+  const [bgRemovalStatus, setBgRemovalStatus] = useState<string | null>(null);
+  const isRemovingBg = !!bgRemovalStatus;
 
   // Textures for 3D View
   const [designTextures, setDesignTextures] = useState<Record<string, string>>({});
   const viewModeRef = useRef<"2D" | "3D">("2D");
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Helpers ──────────────────────────────────────────────────────
+  // Initialize zoom based on screen width
+  useEffect(() => {
+    const updateZoom = () => {
+      if (window.innerWidth < 768) {
+        const scale = (window.innerWidth - 16) / 500;
+        setZoom(Math.min(Math.max(scale, 0.5), 0.92));
+      } else {
+        setZoom(1.0);
+      }
+    };
+    updateZoom();
+    window.addEventListener("resize", updateZoom);
+    return () => window.removeEventListener("resize", updateZoom);
+  }, []);
 
-  const captureAllCanvasTextures = useCallback(() => {
+  // ── Helper: Update Three.js Texture ───────────────────────────────
+  
+  const updateThreeTexture = useCallback(async () => {
     const textures: Record<string, string> = {};
-    const allViews = [
+    const allViews: { key: string; ref: ShirtView }[] = [
       { key: "front", ref: "front" },
       { key: "back", ref: "back" },
       { key: "leftSleeve", ref: "left-sleeve" },
@@ -40,16 +71,117 @@ export function useCustomizeEditor() {
       const c = canvasesRef.current[view.ref];
       if (c) {
         c.discardActiveObject();
-        c.requestRenderAll();
+        c.renderAll(); 
         try {
-          textures[view.key] = c.toDataURL({ multiplier: 2, format: "png" });
+          textures[view.key] = await compositeViewTexture(
+            view.ref,
+            c,
+            shirtColorRef.current, // Use ref to avoid dependency cycle
+            false // 3D texture should be transparent
+          );
         } catch (err) {
-          console.error(`[Texture] Failed to capture ${view.ref}:`, err);
+          console.error(`[Texture] Failed to composite ${view.ref}:`, err);
         }
       }
     }
     setDesignTextures(textures);
-  }, []);
+  }, []); // No dependencies - stable callback
+
+  const debouncedUpdateTexture = useCallback(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      updateThreeTexture();
+    }, 300);
+  }, [updateThreeTexture]);
+
+  // ── Helper: Replace Selected Fabric Image ─────────────────────────
+
+  const replaceSelectedFabricImage = async (transparentUrl: string) => {
+    if (!canvas || !selectedObject || selectedObject.type !== "image") return;
+
+    // Load new image from transparent source
+    const newImg = await FabricImage.fromURL(transparentUrl);
+    
+    // Rule: Preserve position, scale, rotation, layer order, and flips
+    newImg.set({
+      left: selectedObject.left,
+      top: selectedObject.top,
+      scaleX: selectedObject.scaleX,
+      scaleY: selectedObject.scaleY,
+      angle: selectedObject.angle,
+      opacity: selectedObject.opacity,
+      flipX: selectedObject.flipX,
+      flipY: selectedObject.flipY,
+      originX: selectedObject.originX,
+      originY: selectedObject.originY,
+      skewX: selectedObject.skewX,
+      skewY: selectedObject.skewY,
+    });
+
+    // Find the original index to preserve layer order
+    const index = canvas.getObjects().indexOf(selectedObject);
+    
+    canvas.remove(selectedObject);
+    canvas.insertAt(index, newImg); // Preserve layer order
+    canvas.setActiveObject(newImg);
+    canvas.requestRenderAll();
+    
+    // Automatically refresh 3D view
+    updateThreeTexture();
+  };
+
+  // ── Helper: Remove Background ────────────────────────────────────
+
+  const removeBackground = async () => {
+    if (!canvas || !selectedObject || selectedObject.type !== "image") {
+      alert("Please select an image first.");
+      return;
+    }
+    
+    if (bgRemovalStatus) return;
+
+    setBgRemovalStatus("Preparing AI background remover...");
+    try {
+      const fabricImg = selectedObject as FabricImage;
+      
+      // 1. Get high-quality source blob
+      // We use a high multiplier to ensure we don't lose quality during the transfer
+      const dataUrl = fabricImg.toDataURL({ 
+        format: 'png',
+        multiplier: 2 // Boost resolution for processing
+      });
+      const response = await fetch(dataUrl);
+      const inputBlob = await response.blob();
+
+      setBgRemovalStatus("Removing background...");
+      
+      // 2. Use @imgly/background-removal with high-quality settings
+      const transparentBlob = await imglyRemoveBackground(inputBlob, {
+        output: {
+          format: "image/png",
+          quality: 1.0, // Maximum quality
+        },
+        progress: (status, progress) => {
+          if (status === "fetching") setBgRemovalStatus("Downloading AI models...");
+          if (status === "processing") setBgRemovalStatus(`Removing background (${Math.round(progress * 100)}%)...`);
+        }
+      });
+
+      setBgRemovalStatus("Optimizing image...");
+      const transparentUrl = URL.createObjectURL(transparentBlob);
+
+      // 3. Replace the image on canvas while preserving properties
+      await replaceSelectedFabricImage(transparentUrl);
+      
+    } catch (err: any) {
+      console.error("AI BG Removal Error:", err);
+      alert("Failed to remove background locally. Please check your connection and try again.");
+    } finally {
+      setBgRemovalStatus(null);
+    }
+  };
+
+  // ── Canvas Logic ───────────────────────────────────────────────
 
   const syncStateFromObject = (obj: FabricObject) => {
     if (!obj) return;
@@ -62,27 +194,15 @@ export function useCustomizeEditor() {
     }
   };
 
-  // ── Canvas Initialization ───────────────────────────────────────
-
   const onCanvasReady = useCallback((view: string) => {
     return (fabricCanvas: Canvas) => {
       canvasesRef.current[view] = fabricCanvas;
+      if (view === "front") setCanvas(fabricCanvas);
 
-      if (view === "front") {
-        setCanvas(fabricCanvas);
-      }
-
-      const handleSelection = (e: any) => {
+      const handleSelection = (e: { selected?: FabricObject[] }) => {
         const obj = e.selected?.[0];
         setSelectedObject(obj || null);
-        if (obj) {
-          setRotation(Math.round(obj.angle || 0));
-          setOpacity(Math.round((obj.opacity || 1) * 100));
-          setSize(Math.round((obj.scaleX || 1) * 50));
-          if (obj instanceof IText) {
-            setCanvasText(obj.text || "");
-          }
-        }
+        if (obj) syncStateFromObject(obj);
       };
 
       fabricCanvas.on("selection:created", handleSelection);
@@ -92,39 +212,36 @@ export function useCustomizeEditor() {
         if (e.target) handleSelection({ selected: [e.target] });
       });
 
-      const updateTextureForPreview = () => {
-        if (viewModeRef.current === "3D") {
-          const textures: Record<string, string> = {};
-          const allViews = [
-            { key: "front", ref: "front" },
-            { key: "back", ref: "back" },
-            { key: "leftSleeve", ref: "left-sleeve" },
-            { key: "rightSleeve", ref: "right-sleeve" },
-          ];
-          for (const v of allViews) {
-            const c = canvasesRef.current[v.ref];
-            if (c) {
-              try {
-                textures[v.key] = c.toDataURL({ multiplier: 2, format: "png" });
-              } catch { /* skip */ }
-            }
-          }
-          setDesignTextures(textures);
-        }
-      };
-      fabricCanvas.on("object:added", updateTextureForPreview);
-      fabricCanvas.on("object:removed", updateTextureForPreview);
-      fabricCanvas.on("object:modified", updateTextureForPreview);
-      fabricCanvas.on("text:changed", updateTextureForPreview);
+      const refresh3D = () => { if (viewModeRef.current === "3D") debouncedUpdateTexture(); };
+      fabricCanvas.on("object:added", refresh3D);
+      fabricCanvas.on("object:removed", refresh3D);
+      fabricCanvas.on("object:modified", refresh3D);
+      fabricCanvas.on("text:changed", refresh3D);
+
+      // ── NEW: Implement Printable Area Clipping ─────────────────────
+      // This ensures elements don't show up outside the designated box.
+      // ───────────────────────────────────────────────────────────────
+      const { Rect } = require("fabric");
+      const clipRect = new Rect({
+        left: 0,
+        top: 0,
+        width: fabricCanvas.getWidth(),
+        height: fabricCanvas.getHeight(),
+        absolutePositioned: true
+      });
+      fabricCanvas.clipPath = clipRect;
+      fabricCanvas.requestRenderAll();
     };
-  }, []);
+  }, [debouncedUpdateTexture]);
 
   const handleFrontCanvas = useCallback((c: Canvas) => onCanvasReady("front")(c), [onCanvasReady]);
   const handleBackCanvas = useCallback((c: Canvas) => onCanvasReady("back")(c), [onCanvasReady]);
   const handleLeftCanvas = useCallback((c: Canvas) => onCanvasReady("left-sleeve")(c), [onCanvasReady]);
   const handleRightCanvas = useCallback((c: Canvas) => onCanvasReady("right-sleeve")(c), [onCanvasReady]);
 
-  // ── Effects ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (viewMode === "3D") updateThreeTexture();
+  }, [shirtColor, viewMode, updateThreeTexture]);
 
   useEffect(() => {
     const newCanvas = canvasesRef.current[shirtView];
@@ -170,11 +287,9 @@ export function useCustomizeEditor() {
     }
   }, [canvasText, canvas, selectedObject]);
 
-  // ── Event Handlers ──────────────────────────────────────────────
-
   const handleViewToggle = (mode: "2D" | "3D") => {
     viewModeRef.current = mode;
-    if (mode === "3D") captureAllCanvasTextures();
+    if (mode === "3D") updateThreeTexture();
     setViewMode(mode);
   };
 
@@ -203,7 +318,6 @@ export function useCustomizeEditor() {
       if (!dataUrl) return;
       try {
         const img = await FabricImage.fromURL(dataUrl);
-        // Scale to fit within the printable area
         const maxW = canvas.getWidth() * 0.8;
         const maxH = canvas.getHeight() * 0.8;
         const scale = Math.min(maxW / (img.width || 1), maxH / (img.height || 1), 1);
@@ -217,22 +331,16 @@ export function useCustomizeEditor() {
         canvas.add(img);
         canvas.setActiveObject(img);
         canvas.requestRenderAll();
-      } catch (err) {
-        console.error("Failed to load image:", err);
-      }
+      } catch (err) { console.error("Failed to load image:", err); }
     };
     reader.readAsDataURL(file);
   };
 
   const changeFont = async (font: string) => {
     setFontFamily(font);
-    // Dynamically load the font stylesheet from Google Fonts
     await loadGoogleFont(font);
     if (canvas && selectedObject && selectedObject instanceof IText) {
-      // Wait for the browser to actually have the font ready
-      try {
-        await document.fonts.load(`16px "${font}"`);
-      } catch { /* font may already be loaded */ }
+      try { await document.fonts.load(`16px "${font}"`); } catch { }
       selectedObject.set("fontFamily", font);
       selectedObject.initDimensions();
       selectedObject.setCoords();
@@ -292,10 +400,8 @@ export function useCustomizeEditor() {
     // Tool state
     activeTool, setActiveTool,
     viewMode, shirtView, setShirtView,
-
     // Canvas state
     canvas, selectedObject,
-
     // UI state
     canvasText, setCanvasText,
     fontFamily, changeFont,
@@ -303,18 +409,20 @@ export function useCustomizeEditor() {
     opacity, setOpacity,
     rotation, setRotation,
     size, setSize,
-
+    zoom, setZoom,
     // 3D textures
     designTextures,
-
     // Canvas handlers
+    onCanvasReady,
     handleFrontCanvas, handleBackCanvas,
     handleLeftCanvas, handleRightCanvas,
-
     // Actions
     handleViewToggle, addText, addImage,
     changeSelectedColor, handleReset,
     deleteSelected, duplicateSelected,
     bringForward, sendBackward,
+    // BG Removal
+    removeBackground, isRemovingBg, bgRemovalStatus,
+    replaceSelectedFabricImage, updateThreeTexture
   };
 }

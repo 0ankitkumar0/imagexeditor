@@ -27,10 +27,10 @@ export function SliderControl({
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-2">
-        <label className="text-sm font-medium text-zinc-700 flex items-center gap-2">
-          {Icon && <Icon className="w-3.5 h-3.5 text-zinc-400" />}
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-1.5 md:mb-2">
+        <label className="text-xs md:text-sm font-medium text-text-primary flex items-center gap-1.5 md:gap-2">
+          {Icon && <Icon className="w-3 md:w-3.5 h-3 md:h-3.5 text-primary" />}
           {label}
         </label>
         <div className="flex items-center">
@@ -38,21 +38,23 @@ export function SliderControl({
             type="text"
             value={value}
             onChange={handleInputChange}
-            className="w-12 text-xs font-medium text-zinc-700 text-right border border-zinc-200 px-1.5 py-0.5 rounded-md bg-zinc-50 outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-400"
+            className="w-10 md:w-12 text-[10px] md:text-xs font-medium text-text-primary text-right border border-border px-1 md:px-1.5 py-0.5 rounded-md bg-surface outline-none focus:ring-1 focus:ring-primary focus:border-primary"
           />
           {suffix && (
-            <span className="text-xs text-zinc-400 ml-0.5">{suffix}</span>
+            <span className="text-[10px] md:text-xs text-text-secondary ml-0.5">{suffix}</span>
           )}
         </div>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => setValue(Number(e.target.value))}
-        className="w-full h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-zinc-900 hover:accent-zinc-700"
-      />
+      <div className="relative flex items-center h-6 md:h-1.5">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => setValue(Number(e.target.value))}
+          className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-primary hover:accent-primary/80"
+        />
+      </div>
     </div>
   );
 }

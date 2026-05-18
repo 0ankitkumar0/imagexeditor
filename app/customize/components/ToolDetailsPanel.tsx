@@ -2,16 +2,16 @@ import { useRef, useState } from "react";
 import {
   Trash2,
   Upload,
-  Image as ImageIcon,
   Copy,
   ArrowUp,
   ArrowDown,
   MousePointer2,
-  Info,
   GripVertical,
+  Sparkles,
 } from "lucide-react";
-import { Canvas, Object as FabricObject, IText, FabricImage } from "fabric";
+import { Canvas, Object as FabricObject, IText } from "fabric";
 import { FontPicker } from "./FontPicker";
+import { AIPanel } from "./AIPanel";
 
 interface ToolDetailsPanelProps {
   activeTool: string;
@@ -33,6 +33,8 @@ interface ToolDetailsPanelProps {
   duplicateSelected: () => void;
   bringForward: () => void;
   sendBackward: () => void;
+  removeBackground: () => void;
+  bgRemovalStatus: string | null;
   // Mobile
   mobile?: boolean;
 }
@@ -53,18 +55,22 @@ export function ToolDetailsPanel({
   duplicateSelected,
   bringForward,
   sendBackward,
+  removeBackground,
+  bgRemovalStatus,
   mobile,
 }: ToolDetailsPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [, forceUpdate] = useState(0);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const isRemovingBg = !!bgRemovalStatus;
   return (
-    <div className={mobile ? "" : "w-72 bg-white border-r border-zinc-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex flex-col z-10 shrink-0"}>
+    <div className={mobile ? "" : "h-full w-72 bg-card border-r border-border shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex flex-col z-10 shrink-0 transition-colors"}>
       {!mobile && (
-        <div className="p-5 border-b border-zinc-100">
-          <h2 className="font-semibold text-zinc-900 capitalize">{activeTool}</h2>
-          <p className="text-xs text-zinc-500 mt-1">
+        <div className="p-5 border-b border-border">
+          <h2 className="font-semibold text-text-primary capitalize">{activeTool}</h2>
+          <p className="text-xs text-text-secondary mt-1">
             Add and manage your {activeTool}.
           </p>
         </div>
@@ -77,36 +83,61 @@ export function ToolDetailsPanel({
               <>
                 {/* Actions */}
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-zinc-700">Actions</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={duplicateSelected}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-sm text-zinc-700 transition-colors"
-                    >
-                      <Copy className="w-4 h-4" /> Duplicate
-                    </button>
-                    <button
-                      onClick={deleteSelected}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-md border border-red-200 bg-white hover:bg-red-50 text-sm text-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
+                  <h3 className="text-sm font-semibold text-text-primary">Actions</h3>
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={duplicateSelected}
+                        className="flex items-center justify-center gap-2 px-3 py-2 md:py-2.5 rounded-md border border-border bg-card hover:bg-surface text-xs md:text-sm text-text-primary transition-colors"
+                      >
+                        <Copy className="w-4 h-4" /> Duplicate
+                      </button>
+                      <button
+                        onClick={deleteSelected}
+                        className="flex items-center justify-center gap-2 px-3 py-2 md:py-2.5 rounded-md border border-red-200/50 bg-card hover:bg-red-500/10 text-xs md:text-sm text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete
+                      </button>
+                    </div>
+                    
+                    {/* NEW: Background Removal Button */}
+                    {selectedObject.type === "image" && (
+                      <button
+                        onClick={removeBackground}
+                        disabled={isRemovingBg}
+                        className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border border-primary/20 bg-primary/5 hover:bg-primary/10 text-xs md:text-sm text-primary font-semibold transition-all ${
+                          isRemovingBg ? "opacity-70 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        {isRemovingBg ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            {bgRemovalStatus}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            AI Remove Background
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Layer Order */}
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-zinc-700">Layer Order</h3>
+                  <h3 className="text-sm font-semibold text-text-primary">Layer Order</h3>
                   <div className="flex gap-2">
                     <button
                       onClick={bringForward}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-sm text-zinc-700 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 md:py-2.5 rounded-md border border-border bg-card hover:bg-surface text-xs md:text-sm text-text-primary transition-colors"
                     >
                       <ArrowUp className="w-4 h-4" /> Forward
                     </button>
                     <button
                       onClick={sendBackward}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 text-sm text-zinc-700 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 md:py-2.5 rounded-md border border-border bg-card hover:bg-surface text-xs md:text-sm text-text-primary transition-colors"
                     >
                       <ArrowDown className="w-4 h-4" /> Backward
                     </button>
@@ -114,13 +145,13 @@ export function ToolDetailsPanel({
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center text-center mt-10 space-y-3">
-                <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center">
-                  <MousePointer2 className="w-5 h-5 text-zinc-400" />
+              <div className="flex flex-col items-center text-center mt-6 md:mt-10 space-y-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-surface flex items-center justify-center">
+                  <MousePointer2 className="w-4 h-4 md:w-5 md:h-5 text-text-secondary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-600">No element selected</p>
-                  <p className="text-xs text-zinc-400 mt-1">
+                  <p className="text-sm font-medium text-text-primary">No element selected</p>
+                  <p className="text-[10px] md:text-xs text-text-secondary mt-1">
                     Click on an object on the canvas to select and edit it.
                   </p>
                 </div>
@@ -134,12 +165,12 @@ export function ToolDetailsPanel({
           <div className="space-y-4">
             <button
               onClick={addText}
-              className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-900 py-3 rounded-md font-bold text-xl transition-colors"
+              className="w-full bg-surface hover:opacity-80 text-text-primary py-2.5 md:py-3 rounded-md font-bold text-lg md:text-xl transition-colors"
             >
               Add a heading
             </button>
-            <div className="pt-4 border-t border-zinc-100">
-              <label className="text-xs font-semibold text-zinc-500 mb-2 block uppercase tracking-wider">
+            <div className="pt-4 border-t border-border">
+              <label className="text-[10px] md:text-xs font-semibold text-text-secondary mb-2 block uppercase tracking-wider">
                 Font Family
               </label>
               <FontPicker value={fontFamily} onChange={changeFont} />
@@ -151,7 +182,7 @@ export function ToolDetailsPanel({
         {activeTool === "upload" && (
           <div className="space-y-4">
             <div
-              className="border-2 border-dashed border-zinc-300 rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-zinc-400 hover:bg-zinc-50 transition-colors"
+              className="border-2 border-dashed border-border rounded-xl p-6 md:p-8 flex flex-col items-center justify-center gap-2 md:gap-3 cursor-pointer hover:border-text-secondary hover:bg-surface transition-colors"
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
               onDrop={(e) => {
@@ -161,17 +192,17 @@ export function ToolDetailsPanel({
                 if (file && file.type.startsWith("image/")) addImage(file);
               }}
             >
-              <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center">
-                <Upload className="w-5 h-5 text-zinc-500" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-surface flex items-center justify-center">
+                <Upload className="w-4 h-4 md:w-5 md:h-5 text-text-secondary" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-zinc-700">Click to upload</p>
-                <p className="text-xs text-zinc-400 mt-1">or drag & drop here</p>
+                <p className="text-xs md:text-sm font-medium text-text-primary">Click to upload</p>
+                <p className="text-[10px] md:text-xs text-text-secondary mt-1">or drag & drop here</p>
               </div>
-              <p className="text-[10px] text-zinc-400 uppercase tracking-wider">PNG, JPG, SVG, WEBP</p>
+              <p className="text-[9px] md:text-[10px] text-text-secondary uppercase tracking-wider">PNG, JPG, SVG, WEBP</p>
             </div>
-            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 flex items-center gap-1.5">
-              <span className="font-semibold">Note:</span> PNG images recommended for best quality (transparent background).
+            <p className="text-[10px] md:text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2 flex items-center gap-1.5">
+              <span className="font-semibold">Note:</span> PNG recommended for transparency.
             </p>
             <input
               ref={fileInputRef}
@@ -189,12 +220,12 @@ export function ToolDetailsPanel({
 
         {/* COLORS TOOL PANEL */}
         {activeTool === "colors" && (
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             <div>
-              <label className="text-xs font-semibold text-zinc-500 mb-2 block uppercase tracking-wider">
+              <label className="text-[10px] md:text-xs font-semibold text-text-secondary mb-2 block uppercase tracking-wider">
                 Base T-Shirt Color
               </label>
-              <div className="flex gap-3 flex-wrap mt-2">
+              <div className="flex gap-2 md:gap-3 flex-wrap mt-2">
                 {[
                   "#ffffff",
                   "#09090b",
@@ -209,10 +240,10 @@ export function ToolDetailsPanel({
                   <button
                     key={color}
                     onClick={() => setShirtColor(color)}
-                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${
+                    className={`w-8 h-8 md:w-10 md:h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${
                       shirtColor === color
-                        ? "border-zinc-900 scale-110"
-                        : "border-zinc-200"
+                        ? "border-primary scale-110"
+                        : "border-border"
                     }`}
                     style={{ backgroundColor: color }}
                   />
@@ -222,10 +253,13 @@ export function ToolDetailsPanel({
           </div>
         )}
 
+        {/* AI TOOL PANEL */}
+        {activeTool === "ai" && <AIPanel addImage={addImage} />}
+
         {/* LAYERS TOOL PANEL */}
         {activeTool === "layers" && (
           <div className="space-y-1">
-            <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold mb-2">Drag to reorder</p>
+            <p className="text-[9px] md:text-[10px] text-text-secondary uppercase tracking-wider font-bold mb-2">Drag to reorder</p>
             {canvas &&
               [...canvas.getObjects()].reverse().map((obj, displayIdx, arr) => {
                 // displayIdx 0 = top layer, last = bottom layer
@@ -261,23 +295,23 @@ export function ToolDetailsPanel({
                       setDragIndex(null);
                       setDragOverIndex(null);
                     }}
-                    className={`flex items-center gap-2 p-3 rounded-md border cursor-grab active:cursor-grabbing transition-all ${
+                    className={`flex items-center gap-2 p-2 md:p-3 rounded-md border cursor-grab active:cursor-grabbing transition-all ${
                       dragOverIndex === displayIdx && dragIndex !== displayIdx
-                        ? "border-blue-400 bg-blue-50"
+                        ? "border-accent bg-accent/10"
                         : selectedObject === obj
-                        ? "border-zinc-900 bg-zinc-50"
-                        : "border-zinc-200 hover:border-zinc-300 bg-white"
+                        ? "border-primary bg-surface"
+                        : "border-border hover:border-text-secondary bg-card"
                     } ${dragIndex === displayIdx ? "opacity-40" : ""}`}
                     onClick={() => {
                       canvas.setActiveObject(obj);
                       canvas.requestRenderAll();
                     }}
                   >
-                    <GripVertical className="w-4 h-4 text-zinc-300 shrink-0" />
-                    <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100 rounded px-1.5 py-0.5 shrink-0">
+                    <GripVertical className="w-3.5 h-3.5 md:w-4 md:h-4 text-text-secondary shrink-0" />
+                    <span className="text-[9px] md:text-[10px] font-bold text-text-secondary bg-surface rounded px-1.5 py-0.5 shrink-0">
                       {displayIdx + 1}
                     </span>
-                    <span className="text-sm font-medium flex-1 truncate">
+                    <span className="text-xs md:text-sm font-medium flex-1 truncate text-text-primary">
                       {obj.type === "i-text"
                         ? (obj as IText).text
                         : obj.type === "image"
@@ -285,7 +319,7 @@ export function ToolDetailsPanel({
                         : "Object"}
                     </span>
                     <Trash2
-                      className="w-4 h-4 text-zinc-400 hover:text-red-500 shrink-0"
+                      className="w-3.5 h-3.5 md:w-4 md:h-4 text-text-secondary hover:text-red-500 shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         canvas.remove(obj);
@@ -305,8 +339,9 @@ export function ToolDetailsPanel({
           activeTool !== "text" &&
           activeTool !== "upload" &&
           activeTool !== "colors" &&
-          activeTool !== "layers" && (
-            <div className="text-center text-zinc-400 text-sm mt-10">
+          activeTool !== "layers" &&
+          activeTool !== "ai" && (
+            <div className="text-center text-text-secondary text-sm mt-10">
               Options for {activeTool} will appear here.
             </div>
           )}

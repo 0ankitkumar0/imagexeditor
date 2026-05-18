@@ -1,16 +1,22 @@
-import { Undo2, Redo2, RotateCcw, Box } from "lucide-react";
+"use client";
+
+import { Undo2, Redo2, RotateCcw, Box, Plus, Minus } from "lucide-react";
 import { Canvas } from "fabric";
 import dynamic from "next/dynamic";
 import { EditorCanvas } from "./EditorCanvas";
-import { ActionButton } from "./ui/ActionButton";
-import { PRINTABLE_AREAS } from "../config";
+import {
+  getPrintableAreasByProduct,
+  getProductViewImagePath,
+  type ProductType,
+  type ShirtView,
+} from "../config";
 
 const ThreeScene = dynamic(
   () => import("../../preview/components/ThreeScene"),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center bg-zinc-100 text-zinc-400">
+      <div className="w-full h-full flex items-center justify-center bg-muted text-text-secondary">
         <Box className="w-8 h-8 animate-pulse" />
       </div>
     ),
@@ -18,6 +24,7 @@ const ThreeScene = dynamic(
 );
 
 interface CanvasWorkspaceProps {
+  productType: ProductType;
   viewMode: "2D" | "3D";
   shirtView: string;
   setShirtView: (view: string) => void;
@@ -26,13 +33,54 @@ interface CanvasWorkspaceProps {
   designTextures: Record<string, string>;
   canvas: Canvas | null;
   onReset: () => void;
+  onCanvasReady: (view: string) => (canvas: Canvas) => void;
   handleFrontCanvas: (c: Canvas) => void;
   handleBackCanvas: (c: Canvas) => void;
   handleLeftCanvas: (c: Canvas) => void;
   handleRightCanvas: (c: Canvas) => void;
+  zoom: number;
+  setZoom: (zoom: number) => void;
+}
+
+const VIEWS = [
+  { label: "Front", short: "Front", val: "front" },
+  { label: "Back", short: "Back", val: "back" },
+  { label: "L. Sleeve", short: "L·Slv", val: "left-sleeve" },
+  { label: "R. Sleeve", short: "R·Slv", val: "right-sleeve" },
+];
+
+/* ─── Design tokens ────────────────────────────────────────────────────
+   Minimal monochrome: card pill, active fill, zero colour
+──────────────────────────────────────────────────────────────────────── */
+const PILL_BASE =
+  "bg-card border border-border " +
+  "shadow-[0_2px_12px_rgba(0,0,0,0.08)]";
+
+// Active segment: solid primary fill, white text
+const ACTIVE_SEG =
+  "bg-primary text-white shadow-[0_1px_4px_rgba(0,0,0,0.18)]";
+
+// Inactive: muted text, surface hover bg with soft shadow
+const INACTIVE_SEG =
+  "text-text-secondary hover:text-text-primary hover:bg-surface hover:shadow-[0_1px_6px_rgba(0,0,0,0.08)]";
+
+/** Minimal floating pill shell */
+function RoyalPill({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-full p-[3px] flex items-center gap-[2px] ${PILL_BASE} ${className}`}>
+      {children}
+    </div>
+  );
 }
 
 export function CanvasWorkspace({
+  productType,
   viewMode,
   shirtView,
   setShirtView,
@@ -41,115 +89,162 @@ export function CanvasWorkspace({
   designTextures,
   canvas,
   onReset,
+  onCanvasReady,
   handleFrontCanvas,
   handleBackCanvas,
   handleLeftCanvas,
   handleRightCanvas,
+  zoom,
+  setZoom,
 }: CanvasWorkspaceProps) {
+  const activeView: ShirtView =
+    shirtView === "back" ||
+      shirtView === "left-sleeve" ||
+      shirtView === "right-sleeve"
+      ? shirtView
+      : "front";
+
+  const productImagePath = getProductViewImagePath(productType, activeView);
+  const printableAreas = getPrintableAreasByProduct(productType);
+
   return (
     <section
-      className="flex-1 flex flex-col relative bg-[#f3f4f6] shadow-inner"
+      className="flex-1 flex flex-col relative bg-surface shadow-inner overflow-hidden transition-colors"
       style={{
-        backgroundImage: "radial-gradient(#e5e7eb 1px, transparent 1px)",
+        backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
         backgroundSize: "20px 20px",
       }}
     >
-      {/* Controls - Top Left: Shirt View Toggle */}
-      <div className="absolute top-3 left-3 md:top-6 md:left-6 z-10 max-w-[calc(100%-5rem)] md:max-w-none">
-        {viewMode === "2D" && (
-          <div className="bg-white rounded-full shadow-sm border border-zinc-200 p-1 flex items-center overflow-x-auto no-scrollbar">
-            {["Front", "Back", "Left Sleeve", "Right Sleeve"].map((side) => {
-              const val = side.toLowerCase().replace(" ", "-");
+      {/* ══════════════════════════════════════════════════════════════
+          TOP-LEFT · View tab switcher — classic dark pill with gold active
+      ══════════════════════════════════════════════════════════════ */}
+      {viewMode === "2D" && (
+        <div className="absolute top-3 left-3 z-30">
+          <RoyalPill className="overflow-x-auto no-scrollbar max-w-[calc(100vw-90px)] md:max-w-none">
+            {VIEWS.map(({ label, short, val }) => {
+              const isActive = shirtView === val;
               return (
                 <button
-                  key={side}
+                  key={val}
                   onClick={() => setShirtView(val)}
-                  className={`px-2.5 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                    shirtView === val
-                      ? "bg-zinc-100 text-zinc-900"
-                      : "text-zinc-500 hover:text-zinc-900"
-                  }`}
+                  className={`
+                    flex-shrink-0 px-2.5 md:px-3.5 py-[4px] rounded-full
+                    text-[9px] md:text-[10px] font-bold tracking-widest uppercase
+                    whitespace-nowrap transition-all duration-200
+                    ${isActive ? ACTIVE_SEG : INACTIVE_SEG}
+                  `}
                 >
-                  {side}
+                  <span className="md:hidden">{short}</span>
+                  <span className="hidden md:inline">{label}</span>
                 </button>
               );
             })}
-          </div>
-        )}
-      </div>
-
-      {/* Controls - Top Right: 2D/3D Toggle */}
-      <div className="absolute top-3 right-3 md:top-6 md:right-6 z-10">
-        <div className="bg-white rounded-full shadow-sm border border-zinc-200 p-1 flex items-center w-max">
-          <button
-            onClick={() => handleViewToggle("2D")}
-            className={`px-2.5 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium transition-colors ${
-              viewMode === "2D"
-                ? "bg-zinc-100 text-zinc-900"
-                : "text-zinc-500 hover:text-zinc-900"
-            }`}
-          >
-            2D
-          </button>
-          <button
-            onClick={() => handleViewToggle("3D")}
-            className={`px-2.5 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium transition-colors ${
-              viewMode === "3D"
-                ? "bg-zinc-100 text-zinc-900"
-                : "text-zinc-500 hover:text-zinc-900"
-            }`}
-          >
-            3D
-          </button>
+          </RoyalPill>
         </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          TOP-RIGHT · 2D / 3D toggle — tiny royal pill
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="absolute top-3 right-3 z-30">
+        <RoyalPill>
+          {(["2D", "3D"] as const).map((mode) => {
+            const isActive = viewMode === mode;
+            return (
+              <button
+                key={mode}
+                onClick={() => handleViewToggle(mode)}
+                className={`
+                  px-3 py-[4px] rounded-full
+                  text-[9px] font-bold tracking-[0.15em] uppercase
+                  transition-all duration-200
+                  ${isActive ? ACTIVE_SEG : INACTIVE_SEG}
+                `}
+              >
+                {mode}
+              </button>
+            );
+          })}
+        </RoyalPill>
       </div>
 
-      {/* Canvas Area */}
-      <div className="flex-1 flex items-center justify-center p-3 md:p-8 relative">
+      {/* ══════════════════════════════════════════════════════════════
+          TOP-RIGHT (below 2D/3D) · Zoom — desktop only, same dark theme
+      ══════════════════════════════════════════════════════════════ */}
+      {viewMode === "2D" && (
+        <div className="hidden md:flex absolute top-12 right-3 z-20 flex-col">
+          <div className="bg-card border border-border shadow-[0_2px_12px_rgba(0,0,0,0.08)] rounded-xl flex flex-col items-center overflow-hidden divide-y divide-border transition-colors">
+            <button
+              onClick={() => setZoom(Math.min(zoom + 0.1, 2))}
+              title="Zoom In"
+              className="px-2.5 py-1.5 text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+            <div className="px-2 py-0.5 text-[7px] font-black tracking-widest text-text-secondary w-full text-center">
+              {Math.round(zoom * 100)}%
+            </div>
+            <button
+              onClick={() => setZoom(Math.max(zoom - 0.1, 0.3))}
+              title="Zoom Out"
+              className="px-2.5 py-1.5 text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
+            >
+              <Minus className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+          CANVAS AREA
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="flex-1 overflow-hidden flex items-center justify-center pt-11 pb-12 px-2">
+
         {/* 3D Preview */}
         {viewMode === "3D" && (
           <div
             id="threejs-container"
-            className="w-full max-w-125 aspect-3/4 bg-zinc-200/50 rounded-2xl flex items-center justify-center border border-zinc-200 shadow-inner relative overflow-hidden"
+            className="w-full h-full max-w-[92vw] sm:max-w-sm md:max-w-2xl rounded-2xl bg-surface flex items-center justify-center border border-border shadow-2xl overflow-hidden transition-colors"
           >
-            <ThreeScene
-              designTextures={designTextures}
-              shirtColor={shirtColor}
+            <ThreeScene 
+              designTextures={designTextures} 
+              shirtColor={shirtColor} 
+              productType={productType}
             />
           </div>
         )}
 
-        {/* 2D Editor — always mounted, hidden when in 3D mode to preserve canvas state */}
+        {/* 2D Editor */}
         <div
-          className="relative w-full max-w-125 aspect-3/4 flex items-center justify-center transition-all duration-300"
+          className="w-full h-full flex items-center justify-center overflow-auto no-scrollbar touch-none"
           style={{ display: viewMode === "2D" ? "flex" : "none" }}
         >
-            {/* Dynamic T-Shirt Background based on shirtView */}
+          <div
+            className="relative flex items-center justify-center origin-center shrink-0"
+            style={{
+              width: "500px",
+              height: "667px",
+              transform: `scale(${zoom})`,
+              transition: "transform 0.2s ease-out",
+            }}
+          >
+            {/* T-shirt background */}
             <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
               <img
-                src={`/images/${
-                  shirtView === "front"
-                    ? "shirt-front.png"
-                    : shirtView === "back"
-                    ? "shirt-back.png"
-                    : shirtView === "left-sleeve"
-                    ? "shirt-left-sleeve.png"
-                    : "shirt-right-sleeve.png"
-                }`}
+                src={productImagePath}
                 alt={`${shirtView} view`}
-                className="max-w-full max-h-full object-contain drop-shadow-md transition-opacity duration-300"
+                className="max-w-full max-h-full object-contain drop-shadow-2xl transition-opacity duration-300"
                 style={{ backgroundColor: shirtColor }}
               />
             </div>
 
-            {/* Fabric.js Canvas Container & Printable Area */}
+            {/* Printable area + Fabric canvases */}
             {(() => {
-              const area =
-                PRINTABLE_AREAS[shirtView] ?? PRINTABLE_AREAS["front"];
+              const area = printableAreas[activeView] ?? printableAreas.front;
               return (
                 <div
                   id="fabric-canvas-container"
-                  className="absolute border-2 border-dashed border-zinc-400/50 rounded-sm flex items-center justify-center group hover:border-blue-400 transition-all duration-200 z-10"
+                  className="absolute border-2 border-dashed border-primary/30 rounded-sm flex items-center justify-center hover:border-primary/50 transition-colors z-10"
                   style={{
                     width: area.width,
                     height: area.height,
@@ -157,77 +252,64 @@ export function CanvasWorkspace({
                     left: area.left,
                   }}
                 >
-                  <span className="absolute -top-5 md:-top-6 text-[8px] md:text-[10px] font-bold text-zinc-400 tracking-wider uppercase bg-[#f3f4f6] px-1.5 md:px-2 rounded-full pointer-events-none">
+                  <span className="absolute -top-5 text-[8px] font-black text-primary/70 tracking-widest uppercase bg-card/80 backdrop-blur-sm px-2 rounded-full pointer-events-none transition-colors">
                     Printable Area
                   </span>
-
-                  {/* Each view has its own Fabric canvas; only the active one is visible */}
-                  <div
-                    className="w-full h-full relative overflow-visible"
-                    style={{
-                      display: shirtView === "front" ? "block" : "none",
-                    }}
-                  >
-                    <EditorCanvas
-                      onCanvasReady={handleFrontCanvas}
-                      width={PRINTABLE_AREAS["front"].canvasWidth}
-                      height={PRINTABLE_AREAS["front"].canvasHeight}
-                    />
-                  </div>
-                  <div
-                    className="w-full h-full relative overflow-visible"
-                    style={{
-                      display: shirtView === "back" ? "block" : "none",
-                    }}
-                  >
-                    <EditorCanvas
-                      onCanvasReady={handleBackCanvas}
-                      width={PRINTABLE_AREAS["back"].canvasWidth}
-                      height={PRINTABLE_AREAS["back"].canvasHeight}
-                    />
-                  </div>
-                  <div
-                    className="w-full h-full relative overflow-visible"
-                    style={{
-                      display:
-                        shirtView === "left-sleeve" ? "block" : "none",
-                    }}
-                  >
-                    <EditorCanvas
-                      onCanvasReady={handleLeftCanvas}
-                      width={PRINTABLE_AREAS["left-sleeve"].canvasWidth}
-                      height={PRINTABLE_AREAS["left-sleeve"].canvasHeight}
-                    />
-                  </div>
-                  <div
-                    className="w-full h-full relative overflow-visible"
-                    style={{
-                      display:
-                        shirtView === "right-sleeve" ? "block" : "none",
-                    }}
-                  >
-                    <EditorCanvas
-                      onCanvasReady={handleRightCanvas}
-                      width={PRINTABLE_AREAS["right-sleeve"].canvasWidth}
-                      height={PRINTABLE_AREAS["right-sleeve"].canvasHeight}
-                    />
-                  </div>
+                  {[
+                    { view: "front", handler: handleFrontCanvas, a: printableAreas.front },
+                    { view: "back", handler: handleBackCanvas, a: printableAreas.back },
+                    { view: "left-sleeve", handler: handleLeftCanvas, a: printableAreas["left-sleeve"] },
+                    { view: "right-sleeve", handler: handleRightCanvas, a: printableAreas["right-sleeve"] },
+                  ].map(({ view, handler, a }) => (
+                    <div
+                      key={view}
+                      className="w-full h-full relative overflow-visible"
+                      style={{ display: shirtView === view ? "block" : "none" }}
+                    >
+                      <EditorCanvas onCanvasReady={handler} width={a.canvasWidth} height={a.canvasHeight} />
+                    </div>
+                  ))}
                 </div>
               );
             })()}
           </div>
+        </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <div className="absolute bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg border border-zinc-200 px-3 md:px-4 py-2 md:py-3 flex items-center gap-1 z-10">
-        <ActionButton icon={Undo2} title="Undo" onClick={() => {}} />
-        <ActionButton icon={Redo2} title="Redo" onClick={() => {}} />
-        <div className="w-px h-4 bg-zinc-200 mx-2"></div>
-        <ActionButton
-          icon={RotateCcw}
-          title="Reset Canvas"
-          onClick={onReset}
-        />
+      {/* ══════════════════════════════════════════════════════════════
+          BOTTOM-CENTER · Undo / Redo / Reset — same royal dark style
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
+        <RoyalPill>
+          {/* Undo */}
+          <button
+            title="Undo"
+            onClick={() => { }}
+            className={`p-[6px] rounded-full transition-colors ${INACTIVE_SEG}`}
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </button>
+          {/* Redo */}
+          <button
+            title="Redo"
+            onClick={() => { }}
+            className={`p-[6px] rounded-full transition-colors ${INACTIVE_SEG}`}
+          >
+            <Redo2 className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Divider */}
+          <div className="w-px h-3 bg-border mx-0.5 shrink-0" />
+
+          {/* Reset */}
+          <button
+            title="Reset Canvas"
+            onClick={onReset}
+            className={`p-[6px] rounded-full transition-colors ${INACTIVE_SEG}`}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </RoyalPill>
       </div>
     </section>
   );

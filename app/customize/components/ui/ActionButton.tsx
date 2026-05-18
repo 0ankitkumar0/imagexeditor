@@ -11,7 +11,7 @@ export function ActionButton({ icon: Icon, title, onClick }: ActionButtonProps) 
     <button
       title={title}
       onClick={onClick}
-      className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-full transition-colors"
+      className="p-2 text-text-secondary hover:text-text-primary hover:bg-hover rounded-full transition-colors"
     >
       <Icon className="w-4 h-4" />
     </button>

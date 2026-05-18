@@ -69,29 +69,29 @@ export function FontPicker({ value, onChange }: FontPickerProps) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-md text-left text-sm flex items-center justify-between gap-2 hover:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-colors"
+        className="w-full px-3 py-2 bg-card border border-border rounded-md text-left text-sm flex items-center justify-between gap-2 hover:border-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
         style={{ fontFamily: `"${value}", sans-serif` }}
       >
-        <span className="truncate">{value}</span>
+        <span className="truncate text-text-primary">{value}</span>
         <ChevronDown
-          className={`h-4 w-4 text-zinc-400 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-text-secondary shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-zinc-200 rounded-lg shadow-xl max-h-[340px] flex flex-col overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-card border border-border rounded-lg shadow-xl max-h-85 flex flex-col overflow-hidden">
           {/* Search input */}
-          <div className="p-2 border-b border-zinc-100">
+          <div className="p-2 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-secondary" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search fonts..."
-                className="w-full pl-7 pr-2 py-1.5 bg-zinc-50 border border-zinc-200 rounded text-sm text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-zinc-400"
+                className="w-full pl-7 pr-2 py-1.5 bg-surface border border-border rounded text-sm text-text-primary placeholder:text-text-secondary outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -100,7 +100,7 @@ export function FontPicker({ value, onChange }: FontPickerProps) {
           <div ref={listRef} className="overflow-y-auto flex-1">
             {filteredFonts.map((cat) => (
               <div key={cat.category}>
-                <div className="px-3 py-1.5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-50 sticky top-0 border-b border-zinc-100">
+                <div className="px-3 py-1.5 text-[10px] font-bold text-text-secondary uppercase tracking-widest bg-surface sticky top-0 border-b border-border">
                   {cat.category}
                 </div>
                 {cat.fonts.map((font) => (
@@ -109,10 +109,10 @@ export function FontPicker({ value, onChange }: FontPickerProps) {
                     type="button"
                     onMouseEnter={() => loadGoogleFont(font)}
                     onClick={() => handleSelect(font)}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-100 transition-colors flex items-center ${
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-hover transition-colors flex items-center ${
                       value === font
-                        ? "bg-zinc-100 text-zinc-900 font-medium"
-                        : "text-zinc-700"
+                        ? "bg-hover text-text-primary font-medium"
+                        : "text-text-primary"
                     }`}
                     style={{ fontFamily: `"${font}", sans-serif` }}
                   >
@@ -122,7 +122,7 @@ export function FontPicker({ value, onChange }: FontPickerProps) {
               </div>
             ))}
             {totalResults === 0 && (
-              <div className="px-3 py-6 text-sm text-zinc-400 text-center">
+              <div className="px-3 py-6 text-sm text-text-secondary text-center">
                 No fonts found
               </div>
             )}

@@ -10,8 +10,8 @@ export function ToggleGroupButton({ icon: Icon, active }: ToggleGroupButtonProps
     <button
       className={`flex-1 flex justify-center py-1.5 rounded-sm transition-colors ${
         active
-          ? "bg-white shadow-sm text-zinc-900"
-          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200"
+          ? "bg-card shadow-sm text-text-primary"
+          : "text-text-secondary hover:text-text-primary hover:bg-hover"
       }`}
     >
       <Icon className="w-4 h-4" />
