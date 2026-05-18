@@ -114,7 +114,7 @@ export async function POST(req: Request) {
 
     // 4. Step 2: Remove Background
     // We'll try the briaai/RMBG-2.0 model as primary
-    let finalImageBlob: Blob = generatedImageBlob;
+    let finalImageBlob: any = generatedImageBlob;
     let bgRemoved = false;
     
     const bgModels = [
